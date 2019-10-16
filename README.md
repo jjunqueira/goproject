@@ -32,7 +32,7 @@ The empty template project is the simplest project type and only does the follow
 
 ## CLI
 
-The cli template project creates the standard files and folders needed for a basic cli tool. It is opinionated on how the project should be structured, tested. It attempt to adhere to the standard Go project layout (https://github.com/golang-standards/project-layout) and the tiny main pattern.
+The cli template project creates the standard files and folders needed for a basic cli tool. It is opinionated on how the project should be structured and tested. It attempts to adhere to the standard Go project layout (https://github.com/golang-standards/project-layout) and the tiny main pattern.
 * Makes the project directory
 * Initializes a git repository (using the default remote repository defined in the users configuration or the one defined in the parameters)
 * Initializes Go modules project
