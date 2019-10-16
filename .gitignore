@@ -10,3 +10,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# Ignore application binaries
+goproject
+goproject_linux
+goproject_osx
