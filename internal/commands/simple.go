@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -59,6 +60,42 @@ func initGoModule(dir string, gitPrefix string, projectname string) error {
 
 func writeMain(path string, contents string) error {
 	bytes := []byte(contents)
-	err := ioutil.WriteFile(path, bytes, 0644)
-	return err
+	tmpPath := path + ".tmp"
+	err := ioutil.WriteFile(tmpPath, bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("gofmt", tmpPath)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return errors.New(fmt.Sprintf("Unable to get stdout pipe for gofmt %v", err))
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return errors.New(fmt.Sprintf("Unable to start gofmt %v", err))
+	}
+
+	b, err := ioutil.ReadAll(stdout)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Unable to read formatted main.go file %v", err))
+	}
+
+	err = ioutil.WriteFile(path, b, 0660)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Unable to write formatted main.go %v", err))
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return errors.New(fmt.Sprintf("Unable to finish gofmt command %v", err))
+	}
+
+	err = os.Remove(tmpPath)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Unable to delete temporary main file %v", err))
+	}
+
+	return nil
 }
