@@ -12,7 +12,7 @@ A Go project structure generator for my personal use
 The new command creates bootstraps a new Go project based on a template. 
 All new projects will create a project using Go modules.
 
-example: `goproject new default`
+example: `goproject new empty`
 
 ### Tidy
 
