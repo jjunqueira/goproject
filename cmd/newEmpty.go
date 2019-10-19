@@ -24,7 +24,8 @@ package cmd
 import (
 	"errors"
 
-	"github.com/jjunqueira/templates"
+	"github.com/jjunqueira/goproject/templates"
+
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +44,7 @@ It creates the root directory, initializes git, initializes Go module, and adds 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		templates.Simple(args[0], args[0])
+		templates.Empty(args[0], args[0])
 	},
 }
 

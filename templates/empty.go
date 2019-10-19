@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-const simpleMain = `
+const emptyMain string = `
 package main
 
 import "fmt"
@@ -19,8 +19,8 @@ func main() {
 }
 `
 
-// Simple Generates a simple project template
-func Simple(gitPrefix string, projectname string) error {
+// Empty generates a simple project template
+func Empty(gitPrefix string, projectname string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func Simple(gitPrefix string, projectname string) error {
 		return err
 	}
 
-	err = writeMain(filepath.Join(fullPath, "main.go"), simpleMain)
+	err = writeMain(filepath.Join(fullPath, "main.go"), emptyMain)
 	return err
 }
 
