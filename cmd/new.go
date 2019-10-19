@@ -19,10 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package main
+package cmd
 
-import "github.com/jjunqueira/goproject/cmd"
+import (
+	"errors"
+	"fmt"
 
-func main() {
-  cmd.Execute()
+	"github.com/spf13/cobra"
+)
+
+// newCmd represents the new command
+var newCmd = &cobra.Command{
+	Use:   "new [projecttype]",
+	Short: "Create a new project based on a template",
+	Long:  `Create a new project based on one of the available templates such as 'empty' or 'cli'`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("requires a project type argument")
+		}
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("new called %v", args)
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(newCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	//newCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// newCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
