@@ -44,20 +44,14 @@ It creates the root directory, initializes git, initializes Go module, and adds 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		templates.Empty(args[0], args[0])
+		if gitPrefix == "" {
+			templates.Empty(args[0], args[0])
+		} else {
+			templates.Empty(gitPrefix, args[0])
+		}
 	},
 }
 
 func init() {
 	newCmd.AddCommand(newEmptyCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	newEmptyCmd.PersistentFlags().String("gitprefix", "", "The git prefix to use for the project e.g. github.com/jjunqueira. This will be prepended to the project name for use with Go modules. If no prefix is provided the project name will be used as the name of the module.")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// newEmptyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
