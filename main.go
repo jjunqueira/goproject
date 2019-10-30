@@ -24,5 +24,5 @@ package main
 import "github.com/jjunqueira/goproject/cmd"
 
 func main() {
-  cmd.Execute()
+	cmd.Execute()
 }

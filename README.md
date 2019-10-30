@@ -8,17 +8,22 @@ A Go project structure generator for my personal use
 
 ## Commands
 
+### Init
+The init command initializes goproject to run for the first time. By default it will do the following:
+1. Create a directory in the users home folder .config/goproject
+2. Create a default config .config/goproject/config.toml
+3. Create a templates directory .config/goproject/templates
+4. Download default templates to .config/goproject/templates
+
+example: `goproject init`
+
+You can optionally set the config directory: `goproject init --path /my/config/path`
+
 ### New
 The new command creates bootstraps a new Go project based on a template. 
 All new projects will create a project using Go modules.
 
 example: `goproject new empty`
-
-### Tidy
-
-Like the Go modules tidy command if you change you configuration this will execute the changes in the configuration.
-
-example `goproject tidy`
 
 ## Project Templates
 
@@ -41,3 +46,8 @@ The cli template project creates the standard files and folders needed for a bas
 * Creates an app package
 * Creates an config package
 * Creates a commands packages
+
+## Custom
+You can create custom templates utilizing the Custom project template type. Custom templates are configured via the goproject config. An example of setting up custom template names and paths is included in the default configuration.
+
+Usage: `goproject new custom example`

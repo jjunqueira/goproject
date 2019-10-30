@@ -24,6 +24,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/spf13/cobra"
 
@@ -66,7 +67,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goproject.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/goproject/config.toml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -87,8 +88,8 @@ func initConfig() {
 		}
 
 		// Search config in home directory with name ".goproject" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".goproject")
+		viper.AddConfigPath(path.Join(home, ".config", "goproject"))
+		viper.SetConfigName("config")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
