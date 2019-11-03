@@ -11,7 +11,7 @@ import (
 
 // SourceControl configuration sets the default upstream initializing git projects
 type SourceControl struct {
-	Uri string
+	URI string
 }
 
 // Go sets various Go Modules related options
@@ -19,17 +19,18 @@ type Go struct {
 	Vendor bool
 }
 
-// Template specifices user template locations
-type Template struct {
+// CustomTemplate specifices user template locations
+type CustomTemplate struct {
 	Name string `mapstructure:"name"`
 	Path string `mapstructure:"path"`
 }
 
 // Config application configuration
 type Config struct {
-	SourceControl   SourceControl `mapstructure:"sourcecontrol"`
-	Go              Go            `mapstructure:"go"`
-	CustomTemplates []Template    `mapstructure:"custom_templates"`
+	SourceControl   SourceControl    `mapstructure:"sourcecontrol"`
+	Go              Go               `mapstructure:"go"`
+	CustomTemplates []CustomTemplate `mapstructure:"custom_templates"`
+	TemplatesPath   string
 }
 
 // Load the configuration from disk
@@ -47,6 +48,11 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	err = viper.Unmarshal(&c)
+	if err != nil {
+		return nil, err
+	}
+	c.TemplatesPath = path.Join(home, ".config", "goproject", "templates")
 	return &c, err
 }

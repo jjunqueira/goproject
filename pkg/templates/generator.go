@@ -19,11 +19,11 @@ type Project struct {
 }
 
 // NewProject constructs a new Project struct with the provided settings
-func NewProject(gitPrefix string, tplName string, projectName string) (*Project, error) {
+func NewProject(c *goproject.Config, gitPrefix string, tplName string, projectName string) (*Project, error) {
 	p := new(Project)
 	p.gitPrefix = gitPrefix
 	p.projectName = projectName
-	tpl, err := FromPath(tplName)
+	tpl, err := Find(c, tplName)
 	if err != nil {
 		return nil, err
 	}
@@ -33,12 +33,34 @@ func NewProject(gitPrefix string, tplName string, projectName string) (*Project,
 
 // Template represents a template that exists on disk
 type Template struct {
+	name string
 	path string
 }
 
-// FromPath loads a template from the given path or returns an error
-func FromPath(path string) (*Template, error) {
-	return nil, nil
+// Find attempts to load a template by name and the given search paths
+func Find(c *goproject.Config, tplName string) (*Template, error) {
+	// search for custom templates first, they will take precendence over base templates
+	for _, t := range c.CustomTemplates {
+		if t.Name == tplName {
+			return &Template{name: t.Name, path: t.Path}, nil
+		}
+	}
+
+	// No custom template was found, try to find a default one that matches the name
+	var tpl *Template
+	err := filepath.Walk(c.TemplatesPath, func(path string, info os.FileInfo, err error) error {
+		if info.Name() == tplName {
+			tpl = &Template{name: info.Name(), path: path}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if tpl != nil {
+		return tpl, nil
+	}
+	return nil, fmt.Errorf("unable to find template %s in default or custom template paths", tplName)
 }
 
 // Generate generates a new project based on a template
