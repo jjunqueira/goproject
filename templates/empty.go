@@ -28,18 +28,11 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
+
+	"github.com/mitchellh/go-homedir"
 )
-
-const emptyMain string = `
-package main
-
-import "fmt"
-
-func main() {
-	fmt.Println("Hello, world!")
-}
-`
 
 // Empty generates a simple project template
 func Empty(gitPrefix string, projectname string) error {
@@ -64,7 +57,7 @@ func Empty(gitPrefix string, projectname string) error {
 		return err
 	}
 
-	err = writeMain(filepath.Join(fullPath, "main.go"), emptyMain)
+	err = copyTemplate("empty", fullPath)
 	return err
 }
 
@@ -77,6 +70,24 @@ func initGoModule(dir string, gitPrefix string, projectname string) error {
 	moduleName := fmt.Sprintf("%s/%s", gitPrefix, projectname)
 	cmd := exec.Command("go", "mod", "init", moduleName)
 	cmd.Dir = dir
+	return cmd.Run()
+}
+
+func copyTemplate(tplName string, dest string) error {
+	home, err := homedir.Dir()
+	if err != nil {
+		return err
+	}
+	tplPath := path.Join(home, ".config", "goproject", "templates", tplName)
+	if err != nil {
+		return err
+	}
+	err = copyFiles(tplPath, dest)
+	return err
+}
+
+func copyFiles(src string, dest string) error {
+	cmd := exec.Command("cp", "-r", path.Join(src, "*"), path.Join(dest, "*"))
 	return cmd.Run()
 }
 
