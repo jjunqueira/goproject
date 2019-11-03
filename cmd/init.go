@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -31,8 +32,6 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
-
-var initPath string
 
 const configTpl string = `[sourcecontrol]
 uri = https://github.com
@@ -62,59 +61,71 @@ var initCmd = &cobra.Command{
 example: goproject init
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		var configPath string
-
-		if initPath == "" {
-			configPath, err = defaultPath()
-		} else {
-			configPath = initPath
-		}
-
-		fmt.Printf("Initializing goproject to %s\n", configPath)
-		if stat, err := os.Stat(configPath); err == nil && stat.IsDir() {
-			fmt.Println("The provided path already exists so this command will do nothing.\nIf you want to start over from scratch remove the configuration directory and rerun this command")
-			os.Exit(0)
-		}
-
-		// Create the main configuration directory
-		err = os.MkdirAll(configPath, os.ModePerm)
+		err := initialize()
 		if err != nil {
-			fmt.Printf("Unable to create the configuration directory %v\n", err)
-			os.RemoveAll(configPath)
+			fmt.Printf("Unable to initialize goproject: %v", err)
 			os.Exit(1)
 		}
-
-		// Write default config
-		fmt.Printf("Creating default configuration file %s\n", path.Join(configPath, "config.toml"))
-		bytes := []byte(configTpl)
-		tmpPath := path.Join(configPath, "config.toml")
-		err = ioutil.WriteFile(tmpPath, bytes, 0644)
-		if err != nil {
-			fmt.Printf("Unable to create the configuration file %v\n", err)
-			os.RemoveAll(configPath)
-			os.Exit(1)
-		}
-
-		// Create the templates directory
-		fmt.Printf("Creating templates directory %s\n", path.Join(configPath, "templates"))
-		err = os.MkdirAll(path.Join(configPath, "templates"), os.ModePerm)
-		if err != nil {
-			fmt.Printf("Unable to create the templates directory %v\n", err)
-			os.RemoveAll(configPath)
-			os.Exit(1)
-		}
-
-		// Download templates
-		fmt.Printf("Downloading base templates to %s\n", path.Join(configPath, "templates"))
-		err = downloadTemplates(path.Join(configPath, "templates"))
-		if err != nil {
-			fmt.Printf("Unable to download templates %v\n", err)
-			os.RemoveAll(configPath)
-			os.Exit(1)
-		}
-
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(initCmd)
+}
+
+func initialize() error {
+	var err error
+	var configPath string
+	defer func() {
+		if err != nil && configPath != "" {
+			os.RemoveAll(configPath)
+		}
+	}()
+
+	configPath, err = defaultPath()
+	if err != nil {
+		return fmt.Errorf("Unable to construct configuration path: %v", err)
+	}
+
+	fmt.Printf("Initializing goproject to %s\n", configPath)
+	if stat, err := os.Stat(configPath); err == nil && stat.IsDir() {
+		return errors.New("the provided path already exists so this command will do nothing.\nIf you want to start over from scratch remove the configuration directory and rerun this command")
+	}
+
+	// Create the main configuration directory
+	err = os.MkdirAll(configPath, os.ModePerm)
+	if err != nil {
+		err = fmt.Errorf("unable to create the configuration directory %v", err)
+		return err
+	}
+
+	// Write default config
+	fmt.Printf("Creating default configuration file %s\n", path.Join(configPath, "config.toml"))
+	bytes := []byte(configTpl)
+	tmpPath := path.Join(configPath, "config.toml")
+	err = ioutil.WriteFile(tmpPath, bytes, 0644)
+	if err != nil {
+		err = fmt.Errorf("unable to create the configuration file %v", err)
+		return err
+	}
+
+	// Create the templates directory
+	fmt.Printf("Creating templates directory %s\n", path.Join(configPath, "templates"))
+	err = os.MkdirAll(path.Join(configPath, "templates"), os.ModePerm)
+	if err != nil {
+		err = fmt.Errorf("unable to create the templates directory %v", err)
+		return err
+	}
+
+	// Download templates
+	fmt.Printf("Downloading base templates to %s\n", path.Join(configPath, "templates"))
+	err = downloadTemplates(path.Join(configPath, "templates"))
+	if err != nil {
+		err = fmt.Errorf("unable to download templates %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func defaultPath() (string, error) {
@@ -128,9 +139,4 @@ func defaultPath() (string, error) {
 func downloadTemplates(tplPath string) error {
 	cmd := exec.Command("git", "clone", "https://github.com/jjunqueira/goproject-templates", tplPath)
 	return cmd.Run()
-}
-
-func init() {
-	rootCmd.AddCommand(initCmd)
-	initCmd.Flags().StringVar(&initPath, "path", "", "The path for storing configuration and templates")
 }
