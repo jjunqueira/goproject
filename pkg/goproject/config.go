@@ -41,6 +41,7 @@ func Load() (*Config, error) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	viper.AddConfigPath("../../configs")
 	viper.AddConfigPath(path.Join(home, ".config", "goproject"))
 	viper.SetConfigName("config")
 	viper.AutomaticEnv()

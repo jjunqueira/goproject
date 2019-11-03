@@ -1,0 +1,13 @@
+[sourcecontrol]
+uri = "https://github.com"
+
+[go]
+vendor = false
+
+[[custom_templates]]
+name = "example1"
+path = "/path/to/custom/templates/example1"
+
+[[custom_templates]]
+name = "example2"
+path = "/path/to/custom/templates/example2"

@@ -58,5 +58,4 @@ func Execute() {
 }
 
 func init() {
-	app = goproject.New()
 }

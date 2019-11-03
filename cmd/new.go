@@ -24,6 +24,7 @@ package cmd
 import (
 	"errors"
 
+	"github.com/jjunqueira/goproject/pkg/goproject"
 	"github.com/jjunqueira/goproject/pkg/templates"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +41,8 @@ var newCmd = &cobra.Command{
 			return errors.New("requires a project type  and project name argument")
 		}
 
-		p, err := templates.NewProject(gitPrefix, args[0], args[1])
+		app = goproject.New()
+		p, err := templates.NewProject(app.Config, gitPrefix, args[0], args[1])
 		if err != nil {
 			return err
 		}

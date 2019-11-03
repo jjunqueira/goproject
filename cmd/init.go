@@ -34,7 +34,7 @@ import (
 )
 
 const configTpl string = `[sourcecontrol]
-uri = https://github.com
+uri = "https://github.com"
 
 [go]
 vendor = false
