@@ -24,23 +24,30 @@ package cmd
 import (
 	"errors"
 
+	"github.com/jjunqueira/goproject/pkg/templates"
 	"github.com/spf13/cobra"
 )
 
+var gitPrefix string
+
 // newCmd represents the new command
 var newCmd = &cobra.Command{
-	Use:   "new [projecttype]",
+	Use:   "new [template] [projectname]",
 	Short: "Create a new project based on a template",
 	Long:  `Create a new project based on one of the available templates such as 'empty' or 'cli'`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("requires a project type argument")
+		if len(args) < 2 {
+			return errors.New("requires a project type  and project name argument")
 		}
-		return nil
+
+		p, err := templates.NewProject(gitPrefix, args[0], args[1])
+		if err != nil {
+			return err
+		}
+
+		return templates.Generate(app.Config, p)
 	},
 }
-
-var gitPrefix string
 
 func init() {
 	rootCmd.AddCommand(newCmd)
