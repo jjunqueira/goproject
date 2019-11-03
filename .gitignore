@@ -12,6 +12,5 @@
 *.out
 
 # Ignore application binaries
-goproject
 goproject_linux
 goproject_osx
