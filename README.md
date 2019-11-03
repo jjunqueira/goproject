@@ -1,4 +1,4 @@
-# goproject
+# WIP DO NOT USE - goproject
 A Go project structure generator for my personal use
 
 ## Goals
