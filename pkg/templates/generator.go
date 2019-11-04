@@ -60,7 +60,7 @@ func Find(c *goproject.Config, tplName string) (*Template, error) {
 	if tpl != nil {
 		return tpl, nil
 	}
-	return nil, fmt.Errorf("unable to find template %s in default or custom template paths", tplName)
+	return nil, fmt.Errorf("unable to find template '%s' in default or custom template paths", tplName)
 }
 
 // Generate generates a new project based on a template
