@@ -39,12 +39,11 @@ var rootCmd = &cobra.Command{
 A simple Go project generator
 
 Examples:
-goproject new empty
+goproject new empty testproject
 
 Project types:
 
-Empty - Creates a simple go project with a git repository, go modules, and a main.go file.
-CLI - Creates a CLI project with a git repository, go modules, cobra, and viper.
+Empty - Creates a simple go project with a git repository, go modules, build dependencies, and a main.go file.
 `,
 }
 

@@ -39,7 +39,7 @@ type Template struct {
 
 // Find attempts to load a template by name and the given search paths
 func Find(c *goproject.Config, tplName string) (*Template, error) {
-	// search for custom templates first, they will take precendence over base templates
+	// search for custom templates first, they will take precedence over base templates
 	for _, t := range c.CustomTemplates {
 		if t.Name == tplName {
 			return &Template{name: t.Name, path: t.Path}, nil

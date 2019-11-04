@@ -38,7 +38,7 @@ var newCmd = &cobra.Command{
 	Long:  `Create a new project based on one of the available templates such as 'empty' or 'cli'`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 2 {
-			return errors.New("requires a project type  and project name argument")
+			return errors.New("the 'new' command requires a project type  and project name argument")
 		}
 
 		app = goproject.New()
