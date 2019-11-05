@@ -2,32 +2,34 @@ package templates
 
 import (
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/jjunqueira/goproject/pkg/goproject"
-	"github.com/mitchellh/go-homedir"
 )
 
 // Project contains information regarding the project we are generating
 type Project struct {
-	gitPrefix   string
-	projectName string
-	tpl         *Template
+	GitPrefix string
+	Name      string
+	Tpl       *Template
 }
 
 // NewProject constructs a new Project struct with the provided settings
 func NewProject(c *goproject.Config, gitPrefix string, tplName string, projectName string) (*Project, error) {
 	p := new(Project)
-	p.gitPrefix = gitPrefix
-	p.projectName = projectName
+	p.GitPrefix = gitPrefix
+	p.Name = projectName
 	tpl, err := Find(c, tplName)
 	if err != nil {
 		return nil, err
 	}
-	p.tpl = tpl
+	p.Tpl = tpl
 	return p, nil
 }
 
@@ -67,27 +69,36 @@ func Find(c *goproject.Config, tplName string) (*Template, error) {
 func Generate(c *goproject.Config, p *Project) error {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get current working directory: %v", err)
 	}
 
-	fullPath := filepath.Join(cwd, p.projectName)
+	fullPath := filepath.Join(cwd, p.Name)
 	err = os.Mkdir(fullPath, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create project directory: %v", err)
 	}
 
 	err = gitInit(fullPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to initialize git: %v", err)
 	}
 
-	err = initGoModule(fullPath, p.gitPrefix, p.projectName)
+	err = initGoModule(fullPath, p.GitPrefix, p.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to initialize Go Modules: %v", err)
 	}
 
-	err = copyTemplate("empty", fullPath)
-	return err
+	err = copyFiles(p.Tpl.path, fullPath)
+	if err != nil {
+		return fmt.Errorf("unable to copy template files: %v", err)
+	}
+
+	err = applyProjectToTemplates(p, fullPath)
+	if err != nil {
+		return fmt.Errorf("unable to execute templates: %v", err)
+	}
+
+	return nil
 }
 
 func gitInit(dir string) error {
@@ -96,26 +107,67 @@ func gitInit(dir string) error {
 }
 
 func initGoModule(dir string, gitPrefix string, projectname string) error {
-	moduleName := fmt.Sprintf("%s/%s", gitPrefix, projectname)
+	var moduleName string
+	if gitPrefix == "" {
+		moduleName = projectname
+	} else {
+		moduleName = fmt.Sprintf("%s/%s", gitPrefix, projectname)
+	}
 	cmd := exec.Command("go", "mod", "init", moduleName)
 	cmd.Dir = dir
 	return cmd.Run()
 }
 
-func copyTemplate(tplName string, dest string) error {
-	home, err := homedir.Dir()
+func copyFiles(src string, dest string) error {
+	out, err := exec.Command("sh", "-c", fmt.Sprintf("cp -R %s %s", path.Join(src, "*"), dest)).CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to copy files %s %v", out, err)
 	}
-	tplPath := path.Join(home, ".config", "goproject", "templates", tplName)
-	if err != nil {
-		return err
-	}
-	err = copyFiles(tplPath, dest)
-	return err
+	return nil
 }
 
-func copyFiles(src string, dest string) error {
-	cmd := exec.Command("cp", "-r", path.Join(src, "*"), path.Join(dest, "*"))
-	return cmd.Run()
+func applyProjectToTemplates(p *Project, path string) error {
+	filesToRemove := make([]string, 0, 512)
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		fmt.Printf("Processing file %s\n", info.Name())
+		if !strings.Contains(info.Name(), "-tpl") {
+			fmt.Printf("Skipping file %s\n", info.Name())
+			return nil
+		}
+
+		outputFilename := strings.ReplaceAll(info.Name(), "-tpl", "")
+		outputPath := strings.ReplaceAll(path, info.Name(), outputFilename)
+
+		fmt.Printf("Reading file %s\n", info.Name())
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Executing template on %s\n", info.Name())
+		tpl, err := template.New(outputFilename).Parse(string(content))
+		if err != nil {
+			return err
+		}
+
+		f, err := os.Create(outputPath)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Writing output file %s\n", info.Name())
+		err = tpl.Execute(f, p)
+		if err != nil {
+			return err
+		}
+
+		filesToRemove = append(filesToRemove, path)
+		return nil
+	})
+
+	for _, f := range filesToRemove {
+		os.Remove(f)
+	}
+
+	return err
 }

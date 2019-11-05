@@ -22,7 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
+	"fmt"
+	"os"
 
 	"github.com/jjunqueira/goproject/pkg/goproject"
 	"github.com/jjunqueira/goproject/pkg/templates"
@@ -36,18 +37,20 @@ var newCmd = &cobra.Command{
 	Use:   "new [template] [projectname]",
 	Short: "Create a new project based on a template",
 	Long:  `Create a new project based on one of the available templates such as 'empty' or 'cli'`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 2 {
-			return errors.New("the 'new' command requires a project type  and project name argument")
-		}
-
+	Args:  cobra.MinimumNArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
 		app = goproject.New()
 		p, err := templates.NewProject(app.Config, gitPrefix, args[0], args[1])
 		if err != nil {
-			return err
+			fmt.Printf("Unable to construct project structure: %v", err)
+			os.Exit(1)
 		}
 
-		return templates.Generate(app.Config, p)
+		err = templates.Generate(app.Config, p)
+		if err != nil {
+			fmt.Printf("Unable to generate project files: %v", err)
+			os.Exit(2)
+		}
 	},
 }
 
