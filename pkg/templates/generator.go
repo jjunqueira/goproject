@@ -98,6 +98,11 @@ func Generate(c *goproject.Config, p *Project) error {
 		return fmt.Errorf("unable to execute templates: %v", err)
 	}
 
+	err = fixCmdProjectFolderName(strings.ToLower(p.Name), fullPath)
+	if err != nil {
+		return fmt.Errorf("unable to rename cmd project folder: %v", err)
+	}
+
 	return nil
 }
 
@@ -132,6 +137,11 @@ func applyProjectToTemplates(p *Project, path string) error {
 
 		if info.Name() == "gitignore" {
 			os.Rename(path, strings.ReplaceAll(path, "gitignore", ".gitignore"))
+			return nil
+		}
+
+		if info.Name() == "gitkeep" {
+			os.Rename(path, strings.ReplaceAll(path, "gitkeep", ".gitkeep"))
 			return nil
 		}
 
@@ -176,4 +186,10 @@ func applyProjectToTemplates(p *Project, path string) error {
 	}
 
 	return err
+}
+
+func fixCmdProjectFolderName(name string, fullpath string) error {
+	oldpath := path.Join(fullpath, "cmd", "projectname")
+	newpath := path.Join(fullpath, "cmd", name)
+	return os.Rename(oldpath, newpath)
 }

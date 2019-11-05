@@ -17,8 +17,8 @@ clean:
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_LINUX)
 run:
-	$(GOBUILD) -o $(BINARY_NAME) -v ./...
-	./$(BINARY_NAME)
+	$(GOBUILD) -o target/$(BINARY_NAME) -v cmd/$(BINARY_NAME)/main.go
+	./target/$(BINARY_NAME)
 
 # Cross compilation
 build-linux:

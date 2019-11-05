@@ -21,16 +21,16 @@ example: `goproject init`
 The new command creates bootstraps a new Go project based on a template. 
 All new projects will create a project using Go modules.
 
-example: `goproject new empty`
+example: `goproject new basic`
 
 ### Update
 The update command executes a git pull in the goproject templates directory to make sure templates are up to date
 
 ## Project Templates
 
-## Empty
+## Basic
 
-The empty template project is the simplest project type and only does the following:
+The basic template project is the simplest project type and only does the following:
 * Makes the project directory
 * Initializes a git repository (using the default remote repository defined in the users configuration or the one defined in the parameters)
 * Initializes Go modules project
