@@ -129,6 +129,12 @@ func copyFiles(src string, dest string) error {
 func applyProjectToTemplates(p *Project, path string) error {
 	filesToRemove := make([]string, 0, 512)
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+
+		if info.Name() == "gitignore" {
+			os.Rename(path, strings.ReplaceAll(path, "gitignore", ".gitignore"))
+			return nil
+		}
+
 		fmt.Printf("Processing file %s\n", info.Name())
 		if !strings.Contains(info.Name(), "-tpl") {
 			fmt.Printf("Skipping file %s\n", info.Name())
