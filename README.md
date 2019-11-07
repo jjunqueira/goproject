@@ -1,5 +1,5 @@
 # WIP DO NOT USE - goproject
-A Go project structure generator for my personal use
+A Go project generator
 
 ## Goals
 * Consistent folder structure
