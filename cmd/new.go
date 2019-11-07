@@ -56,5 +56,10 @@ var newCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(newCmd)
-	newCmd.PersistentFlags().StringVarP(&gitPrefix, "gitprefix", "", "", "The git prefix to use for the project e.g. github.com/jjunqueira. This will be prepended to the project name for use with Go modules. If no prefix is provided the project name will be used as the name of the module.")
+
+	newDescription := `The git prefix to use for the project e.g. github.com/jjunqueira. 
+	This will be prepended to the project name for use with Go modules. 
+	If no prefix is provided the project name will be used as the name of the module.
+	`
+	newCmd.PersistentFlags().StringVarP(&gitPrefix, "gitprefix", "", "", newDescription)
 }

@@ -19,7 +19,7 @@ type Go struct {
 	Vendor bool
 }
 
-// CustomTemplate specifices user template locations
+// CustomTemplate specifies user template locations
 type CustomTemplate struct {
 	Name string `mapstructure:"name"`
 	Path string `mapstructure:"path"`
@@ -36,15 +36,18 @@ type Config struct {
 // Load the configuration from disk
 func Load() (*Config, error) {
 	var c Config
+
 	home, err := homedir.Dir()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
 	viper.AddConfigPath("../../configs")
 	viper.AddConfigPath(path.Join(home, ".config", "goproject"))
 	viper.SetConfigName("config")
 	viper.AutomaticEnv()
+
 	err = viper.ReadInConfig()
 	if err != nil {
 		return nil, err
@@ -54,6 +57,8 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	c.TemplatesPath = path.Join(home, ".config", "goproject", "templates")
+
 	return &c, err
 }

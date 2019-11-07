@@ -17,5 +17,6 @@ func New() GoProject {
 		fmt.Printf("Unable to load configuration file %v", err)
 		os.Exit(-1)
 	}
+
 	return GoProject{Config: c}
 }

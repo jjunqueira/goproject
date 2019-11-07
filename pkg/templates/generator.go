@@ -25,11 +25,14 @@ func NewProject(c *goproject.Config, gitPrefix string, tplName string, projectNa
 	p := new(Project)
 	p.GitPrefix = gitPrefix
 	p.Name = projectName
+
 	tpl, err := Find(c, tplName)
 	if err != nil {
 		return nil, err
 	}
+
 	p.Tpl = tpl
+
 	return p, nil
 }
 
@@ -50,18 +53,22 @@ func Find(c *goproject.Config, tplName string) (*Template, error) {
 
 	// No custom template was found, try to find a default one that matches the name
 	var tpl *Template
+
 	err := filepath.Walk(c.TemplatesPath, func(path string, info os.FileInfo, err error) error {
 		if info.Name() == tplName {
 			tpl = &Template{name: info.Name(), path: path}
 		}
 		return nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
+
 	if tpl != nil {
 		return tpl, nil
 	}
+
 	return nil, fmt.Errorf("unable to find template '%s' in default or custom template paths", tplName)
 }
 
@@ -73,6 +80,7 @@ func Generate(c *goproject.Config, p *Project) error {
 	}
 
 	fullPath := filepath.Join(cwd, p.Name)
+
 	err = os.Mkdir(fullPath, 0777)
 	if err != nil {
 		return fmt.Errorf("unable to create project directory: %v", err)
@@ -118,31 +126,39 @@ func initGoModule(dir string, gitPrefix string, projectname string) error {
 	} else {
 		moduleName = fmt.Sprintf("%s/%s", gitPrefix, projectname)
 	}
+
 	cmd := exec.Command("go", "mod", "init", moduleName)
 	cmd.Dir = dir
+
 	return cmd.Run()
 }
 
 func copyFiles(src string, dest string) error {
-	out, err := exec.Command("sh", "-c", fmt.Sprintf("cp -R %s %s", path.Join(src, "*"), dest)).CombinedOutput()
+	allSources := path.Join(src, "*")
+	copyCommand := fmt.Sprintf("cp -R %s %s", allSources, dest)
+
+	out, err := exec.Command("sh", "-c", copyCommand).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("unable to copy files %s %v", out, err)
 	}
+
 	return nil
 }
 
 func applyProjectToTemplates(p *Project, path string) error {
 	filesToRemove := make([]string, 0, 512)
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	walkErr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		// Don't keep walking if an error was encountered
+		if err != nil {
+			return err
+		}
 
 		if info.Name() == "gitignore" {
-			os.Rename(path, strings.ReplaceAll(path, "gitignore", ".gitignore"))
-			return nil
+			return os.Rename(path, strings.ReplaceAll(path, "gitignore", ".gitignore"))
 		}
 
 		if info.Name() == "gitkeep" {
-			os.Rename(path, strings.ReplaceAll(path, "gitkeep", ".gitkeep"))
-			return nil
+			return os.Rename(path, strings.ReplaceAll(path, "gitkeep", ".gitkeep"))
 		}
 
 		fmt.Printf("Processing file %s\n", info.Name())
@@ -185,11 +201,12 @@ func applyProjectToTemplates(p *Project, path string) error {
 		os.Remove(f)
 	}
 
-	return err
+	return walkErr
 }
 
 func fixCmdProjectFolderName(name string, fullpath string) error {
 	oldpath := path.Join(fullpath, "cmd", "projectname")
 	newpath := path.Join(fullpath, "cmd", name)
+
 	return os.Rename(oldpath, newpath)
 }

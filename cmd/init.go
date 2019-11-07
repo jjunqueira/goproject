@@ -75,7 +75,9 @@ func init() {
 
 func initialize() error {
 	var err error
+
 	var configPath string
+
 	defer func() {
 		if err != nil && configPath != "" {
 			os.RemoveAll(configPath)
@@ -84,12 +86,18 @@ func initialize() error {
 
 	configPath, err = defaultPath()
 	if err != nil {
-		return fmt.Errorf("Unable to construct configuration path: %v", err)
+		return fmt.Errorf("unable to construct configuration path: %v", err)
 	}
 
 	fmt.Printf("Initializing goproject to %s\n", configPath)
-	if stat, err := os.Stat(configPath); err == nil && stat.IsDir() {
-		return errors.New("the provided path already exists so this command will do nothing.\nIf you want to start over from scratch remove the configuration directory and rerun this command")
+
+	stat, err := os.Stat(configPath)
+	if err == nil && stat.IsDir() {
+		errMsg := `the provided path already exists so this command will do nothing.
+		If you want to start over from scratch remove the configuration directory and rerun this command
+		`
+
+		return errors.New(errMsg)
 	}
 
 	// Create the main configuration directory
@@ -99,26 +107,28 @@ func initialize() error {
 		return err
 	}
 
-	// Write default config
 	fmt.Printf("Creating default configuration file %s\n", path.Join(configPath, "config.toml"))
+
+	// Write default config
 	bytes := []byte(configTpl)
 	tmpPath := path.Join(configPath, "config.toml")
+
 	err = ioutil.WriteFile(tmpPath, bytes, 0644)
 	if err != nil {
 		err = fmt.Errorf("unable to create the configuration file %v", err)
 		return err
 	}
 
-	// Create the templates directory
 	fmt.Printf("Creating templates directory %s\n", path.Join(configPath, "templates"))
+
 	err = os.MkdirAll(path.Join(configPath, "templates"), os.ModePerm)
 	if err != nil {
 		err = fmt.Errorf("unable to create the templates directory %v", err)
 		return err
 	}
 
-	// Download templates
 	fmt.Printf("Downloading base templates to %s\n", path.Join(configPath, "templates"))
+
 	err = downloadTemplates(path.Join(configPath, "templates"))
 	if err != nil {
 		err = fmt.Errorf("unable to download templates %v", err)
@@ -133,6 +143,7 @@ func defaultPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return path.Join(home, ".config", "goproject"), nil
 }
 
