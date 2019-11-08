@@ -2,13 +2,13 @@ package templates
 
 import (
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/jjunqueira/goproject/pkg/goproject"
 )
@@ -52,21 +52,11 @@ func Find(c *goproject.Config, tplName string) (*Template, error) {
 	}
 
 	// No custom template was found, try to find a default one that matches the name
-	var tpl *Template
+	tplPath := path.Join(c.TemplatesPath, tplName)
 
-	err := filepath.Walk(c.TemplatesPath, func(path string, info os.FileInfo, err error) error {
-		if info.Name() == tplName {
-			tpl = &Template{name: info.Name(), path: path}
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if tpl != nil {
-		return tpl, nil
+	_, err := os.Stat(tplPath)
+	if err == nil {
+		return &Template{name: tplName, path: tplPath}, err
 	}
 
 	return nil, fmt.Errorf("unable to find template '%s' in default or custom template paths", tplName)
@@ -86,16 +76,6 @@ func Generate(c *goproject.Config, p *Project) error {
 		return fmt.Errorf("unable to create project directory: %v", err)
 	}
 
-	err = gitInit(fullPath)
-	if err != nil {
-		return fmt.Errorf("unable to initialize git: %v", err)
-	}
-
-	err = initGoModule(fullPath, p.GitPrefix, p.Name)
-	if err != nil {
-		return fmt.Errorf("unable to initialize Go Modules: %v", err)
-	}
-
 	err = copyFiles(p.Tpl.path, fullPath)
 	if err != nil {
 		return fmt.Errorf("unable to copy template files: %v", err)
@@ -106,32 +86,66 @@ func Generate(c *goproject.Config, p *Project) error {
 		return fmt.Errorf("unable to execute templates: %v", err)
 	}
 
-	err = fixCmdProjectFolderName(strings.ToLower(p.Name), fullPath)
+	err = fixCmdProjectFolderName(p, fullPath)
 	if err != nil {
 		return fmt.Errorf("unable to rename cmd project folder: %v", err)
+	}
+
+	err = gitCleanup(fullPath)
+	if err != nil {
+		return fmt.Errorf("unable to initialize git: %v", err)
 	}
 
 	return nil
 }
 
-func gitInit(dir string) error {
-	cmd := exec.Command("git", "init", "-q", dir)
-	return cmd.Run()
-}
+func gitCleanup(dir string) error {
+	gitInit := exec.Command("git", "init", "-q")
+	gitInit.Dir = dir
 
-func initGoModule(dir string, gitPrefix string, projectname string) error {
-	var moduleName string
-	if gitPrefix == "" {
-		moduleName = projectname
-	} else {
-		moduleName = fmt.Sprintf("%s/%s", gitPrefix, projectname)
+	gitAdd := exec.Command("git", "add", "--all")
+	gitAdd.Dir = dir
+
+	gitCommit := exec.Command("git", "commit", "-am", "Initial commit")
+	gitCommit.Dir = dir
+
+	fmt.Printf("Initializing git %v\n", gitInit)
+
+	err := gitInit.Run()
+	if err != nil {
+		return err
 	}
 
-	cmd := exec.Command("go", "mod", "init", moduleName)
-	cmd.Dir = dir
+	fmt.Printf("Adding files to git %v\n", gitAdd)
 
-	return cmd.Run()
+	err = gitAdd.Run()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Committing files to git %v\n", gitCommit)
+
+	err = gitCommit.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
+
+// func initGoModule(dir string, gitPrefix string, projectname string) error {
+// 	var moduleName string
+// 	if gitPrefix == "" {
+// 		moduleName = projectname
+// 	} else {
+// 		moduleName = fmt.Sprintf("%s/%s", gitPrefix, projectname)
+// 	}
+
+// 	cmd := exec.Command("go", "mod", "init", moduleName)
+// 	cmd.Dir = dir
+
+// 	return cmd.Run()
+// }
 
 func copyFiles(src string, dest string) error {
 	allSources := path.Join(src, "*")
@@ -204,9 +218,9 @@ func applyProjectToTemplates(p *Project, path string) error {
 	return walkErr
 }
 
-func fixCmdProjectFolderName(name string, fullpath string) error {
-	oldpath := path.Join(fullpath, "cmd", "projectname")
-	newpath := path.Join(fullpath, "cmd", name)
+func fixCmdProjectFolderName(p *Project, fullpath string) error {
+	oldpath := path.Join(fullpath, "cmd", strings.ToLower(p.Tpl.name))
+	newpath := path.Join(fullpath, "cmd", strings.ToLower(p.Name))
 
 	return os.Rename(oldpath, newpath)
 }
