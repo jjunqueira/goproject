@@ -15,9 +15,10 @@ import (
 
 // Project contains information regarding the project we are generating
 type Project struct {
-	GitPrefix string
-	Name      string
-	Tpl       *Template
+	GitPrefix  string
+	Name       string
+	ModuleName string
+	Tpl        *Template
 }
 
 // NewProject constructs a new Project struct with the provided settings
@@ -25,6 +26,12 @@ func NewProject(c *goproject.Config, gitPrefix string, tplName string, projectNa
 	p := new(Project)
 	p.GitPrefix = gitPrefix
 	p.Name = projectName
+
+	if p.GitPrefix == "" {
+		p.ModuleName = p.Name
+	} else {
+		p.ModuleName = path.Join(p.GitPrefix, p.Name)
+	}
 
 	tpl, err := Find(c, tplName)
 	if err != nil {
@@ -133,20 +140,6 @@ func gitCleanup(dir string) error {
 	return nil
 }
 
-// func initGoModule(dir string, gitPrefix string, projectname string) error {
-// 	var moduleName string
-// 	if gitPrefix == "" {
-// 		moduleName = projectname
-// 	} else {
-// 		moduleName = fmt.Sprintf("%s/%s", gitPrefix, projectname)
-// 	}
-
-// 	cmd := exec.Command("go", "mod", "init", moduleName)
-// 	cmd.Dir = dir
-
-// 	return cmd.Run()
-// }
-
 func copyFiles(src string, dest string) error {
 	allSources := path.Join(src, "*")
 	copyCommand := fmt.Sprintf("cp -R %s %s", allSources, dest)
@@ -182,6 +175,7 @@ func applyProjectToTemplates(p *Project, path string) error {
 		}
 
 		outputFilename := strings.ReplaceAll(info.Name(), "-tpl", "")
+		outputFilename = strings.ReplaceAll(outputFilename, strings.ToLower(p.Tpl.name), strings.ToLower(p.Name))
 		outputPath := strings.ReplaceAll(path, info.Name(), outputFilename)
 
 		fmt.Printf("Reading file %s\n", info.Name())

@@ -1,56 +1,86 @@
 # Go parameters
 GOCMD=go
 GOBUILD=$(GOCMD) build
-GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
-GOGET=$(GOCMD) get
-GOMODTIDY=$(GOCMD) mod tidy
-GOMODVERIFY=$(GOCMD) mod verify
-BINARY_NAME=goproject
-BINARY_OSX=$(BINARY_NAME)_darwin
-BINARY_LINUX=$(BINARY_NAME)_linux
-BINARY_FREEBSD=$(BINARY_NAME)_freebsd
 DIR_NAME := $(shell pwd)
+PACKAGE_NAME := $(shell basename $(DIR_NAME))
+TARGET_DIR_BASE := $(DIR_NAME)/target
+TARGET_DIR := $(TARGET_DIR_BASE)
+
+# define functions - These can be reused in multiple targets. Any exported VARs are available in the function
+define compile 
+	for COMMAND in $(DIR_NAME)/cmd/* ; do \
+		if [[ -z "$${GOOS}" ]]; then \
+			GOOS=$${OSTYPE};\
+		fi; \
+		if [[ -d "$${COMMAND}" ]]; then \
+			go build -trimpath -v -o "$(TARGET_DIR)/bin/$$(basename $${COMMAND})-$${GOOS}" "$${COMMAND}/..."; \
+		fi \
+	done
+endef
+
+define copy-support
+	mkdir -p $(TARGET_DIR)
+endef
 
 # Full build commands
-all: clean mods format lint test build
-release: mods format lint clean test build-osx build-linux build-freebsd package
+all: mods lint test build
+release: clean mods lint test package-ansible
 
 # Code cleanup commands
 mods:
-	$(GOMODTIDY)
-	$(GOMODVERIFY)
-format:
+	go mod tidy
+	go mod verify
+format: $(SOURCE_LIST)
 	find . -name \*.go -not -path vendor -not -path target -exec $(GOPATH)/bin/goimports -w {} \;
 lint:
 	${GOPATH}/bin/golangci-lint run --enable-all --disable funlen --disable gochecknoglobals --disable gochecknoinits
 
 # Build commands
-build: 
-	$(GOBUILD) -gcflags="-trimpath=$(DIR_NAME)" -o target/$(BINARY_NAME) -v cmd/$(BINARY_NAME)/main.go
-build-debug: 
-	$(GOBUILD) -gcflags="-m -l" -ldflags="-v" -o target/$(BINARY_NAME) -v cmd/$(BINARY_NAME)/main.go
+build:
+	$(call compile)
 test: 
 	$(GOTEST) -v ./...
-clean: 
-	rm -f target/*
-run:
-	$(GOBUILD) -gcflags="-trimpath=$(DIR_NAME)" -o target/$(BINARY_NAME) -v cmd/$(BINARY_NAME)/main.go
-	./target/$(BINARY_NAME)
+clean:
+	go clean -modcache -testcache -cache
+	rm -rf $(TARGET_DIR_BASE)
 
 # Cross compilation
+build-all: build-osx build-linux build-freebsd
+
+build-osx: export CGO_ENABLED=0
+build-osx: export GOOS=darwin
+build-osx: export GOARCH=amd64
+build-osx: export TARGET_DIR = $(TARGET_DIR_BASE)/$(GOOS)
 build-osx:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) -gcflags="-trimpath=$(DIR_NAME)" -o target/$(BINARY_OSX) -v cmd/$(BINARY_NAME)/main.go
+	$(call copy-support)
+	$(call compile)
+
+build-linux: export CGO_ENABLED=0
+build-linux: export GOOS=linux
+build-linux: export GOARCH=amd64
+build-linux: export TARGET_DIR = $(TARGET_DIR_BASE)/$(GOOS)
 build-linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -gcflags="-trimpath=$(DIR_NAME)" -o target/$(BINARY_LINUX) -v cmd/$(BINARY_NAME)/main.go
+	$(call copy-support)
+	$(call compile)
+
+build-freebsd: export CGO_ENABLED=0
+build-freebsd: export GOOS=freebsd
+build-freebsd: export GOARCH=amd64
+build-freebsd: export TARGET_DIR = $(TARGET_DIR_BASE)/$(GOOS)
 build-freebsd:
-	CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 $(GOBUILD) -gcflags="-trimpath=$(DIR_NAME)" -o target/$(BINARY_FREEBSD) -v cmd/$(BINARY_NAME)/main.go
+	$(call copy-support)
+	$(call compile)
 
 # Packaging
-package: package-osx package-linux package-freebsd
-package-osx:
-	tar -zcvf target/$(BINARY_OSX).tar.gz target/$(BINARY_OSX)
-package-linux:
-	tar -zcvf target/$(BINARY_LINUX).tar.gz target/$(BINARY_LINUX)
-package-freebsd:
-	tar -zcvf target/$(BINARY_FREEBSD).tar.gz target/$(BINARY_FREEBSD)
+package-binaries: package-osx package-linux package-freebsd
+package-osx: build-osx
+	tar -zcvf $(TARGET_DIR_BASE)/$(PACKAGE_NAME)-$(GOOS).tar.gz $(TARGET_DIR_BASE)/$(GOOS)/*
+package-linux: build-linux
+	tar -zcvf $(TARGET_DIR_BASE)/$(PACKAGE_NAME)-$(GOOS).tar.gz $(TARGET_DIR_BASE)/$(GOOS)/*
+package-freebsd: build-freebsd
+	tar -zcvf $(TARGET_DIR_BASE)/$(PACKAGE_NAME)-$(GOOS).tar.gz $(TARGET_DIR_BASE)/$(GOOS)/*
+package-ansible: build-all
+	cp -r deployments/ansible target/ansible
+	cp -r $(TARGET_DIR_BASE)/**/bin/* $(TARGET_DIR_BASE)/ansible/files
+	cd target/ansible; tar -zcvf ../$(PACKAGE_NAME)_ansible.tar.gz .
