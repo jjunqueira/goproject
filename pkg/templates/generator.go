@@ -116,21 +116,15 @@ func gitCleanup(dir string) error {
 	gitCommit := exec.Command("git", "commit", "-am", "Initial commit")
 	gitCommit.Dir = dir
 
-	fmt.Printf("Initializing git %v\n", gitInit)
-
 	err := gitInit.Run()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Adding files to git %v\n", gitAdd)
-
 	err = gitAdd.Run()
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("Committing files to git %v\n", gitCommit)
 
 	err = gitCommit.Run()
 	if err != nil {
@@ -168,7 +162,6 @@ func applyProjectToTemplates(p *Project, path string) error {
 			return os.Rename(path, strings.ReplaceAll(path, "gitkeep", ".gitkeep"))
 		}
 
-		fmt.Printf("Processing file %s\n", info.Name())
 		if !strings.Contains(info.Name(), "-tpl") {
 			fmt.Printf("Skipping file %s\n", info.Name())
 			return nil
@@ -178,13 +171,11 @@ func applyProjectToTemplates(p *Project, path string) error {
 		outputFilename = strings.ReplaceAll(outputFilename, strings.ToLower(p.Tpl.name), strings.ToLower(p.Name))
 		outputPath := strings.ReplaceAll(path, info.Name(), outputFilename)
 
-		fmt.Printf("Reading file %s\n", info.Name())
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Executing template on %s\n", info.Name())
 		tpl, err := template.New(outputFilename).Parse(string(content))
 		if err != nil {
 			return err
@@ -195,7 +186,6 @@ func applyProjectToTemplates(p *Project, path string) error {
 			return err
 		}
 
-		fmt.Printf("Writing output file %s\n", info.Name())
 		err = tpl.Execute(f, p)
 		if err != nil {
 			return err
