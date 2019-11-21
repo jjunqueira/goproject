@@ -163,7 +163,6 @@ func applyProjectToTemplates(p *Project, path string) error {
 		}
 
 		if !strings.Contains(info.Name(), "-tpl") {
-			fmt.Printf("Skipping file %s\n", info.Name())
 			return nil
 		}
 
