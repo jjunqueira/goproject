@@ -1,6 +1,17 @@
 # WIP DO NOT USE - goproject
 A Go project generator
 
+## Getting Started
+
+```
+git clone https://github.com/jjunqueira/goproject.git
+cd goproject
+make
+cp target/bin/goproject-darwin18 /usr/local/bin/
+goproject init
+goproject new basic testproj
+```
+
 ## Goals
 * Consistent folder structure
 * Go modules
