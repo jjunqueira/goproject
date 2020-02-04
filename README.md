@@ -3,13 +3,22 @@ A Go project generator
 
 ## Getting Started
 
-```
+```bash
+# Clone the repo
 git clone https://github.com/jjunqueira/goproject.git
+
+# Build the binary
 cd goproject
 make
 cp target/bin/goproject-darwin18 /usr/local/bin/
+
+# Initialize configuration (downloads templates, sets configuration parameters)
 goproject init
+
+# Create a new test project to make sure everything is working correctly
 goproject new basic testproj
+cd testproj
+make
 ```
 
 ## Goals
