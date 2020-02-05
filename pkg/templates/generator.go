@@ -78,7 +78,7 @@ func Generate(c *goproject.Config, p *Project) error {
 
 	fullPath := filepath.Join(cwd, p.Name)
 
-	err = os.Mkdir(fullPath, 0777)
+	err = os.Mkdir(fullPath, 0750)
 	if err != nil {
 		return fmt.Errorf("unable to create project directory: %v", err)
 	}
@@ -195,7 +195,10 @@ func applyProjectToTemplates(p *Project, path string) error {
 	})
 
 	for _, f := range filesToRemove {
-		os.Remove(f)
+		err := os.Remove(f)
+		if err != nil {
+			fmt.Printf("unable to remove file %s %v", f, err)
+		}
 	}
 
 	return walkErr

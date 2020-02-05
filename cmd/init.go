@@ -80,7 +80,10 @@ func initialize() error {
 
 	defer func() {
 		if err != nil && configPath != "" {
-			os.RemoveAll(configPath)
+			err = os.RemoveAll(configPath)
+			if err != nil {
+				fmt.Printf("unable to clean up files %v", err)
+			}
 		}
 	}()
 

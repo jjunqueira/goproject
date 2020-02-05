@@ -192,6 +192,7 @@ linters:
   disable:
     - maligned
     - prealloc
+    - gosec
   disable-all: false
   presets:
     - bugs
