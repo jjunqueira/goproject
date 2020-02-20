@@ -162,6 +162,10 @@ func applyProjectToTemplates(p *Project, path string) error {
 			return os.Rename(path, strings.ReplaceAll(path, "gitkeep", ".gitkeep"))
 		}
 
+		if info.Name() == "golangci.yml" {
+			return os.Rename(path, strings.ReplaceAll(path, "golangci.yml", ".golangci.yml"))
+		}
+
 		if !strings.Contains(info.Name(), "-tpl") {
 			return nil
 		}
